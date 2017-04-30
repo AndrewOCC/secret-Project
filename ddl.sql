@@ -44,12 +44,13 @@ PRIMARY KEY (person_id, organizer_id, start_time, start_date, vehicle_code, when
 
 
 CREATE TABLE Member(
-	lives-in VARCHAR(20) REFERENCES Accommodation(name),
-	id VARCHAR(10) PRIMARY KEY,
+	lives_in VARCHAR(20) REFERENCES Accommodation(name),
+	id CHAR(10) PRIMARY KEY, -- "All Member IDs are created as 10-digit numeric codes"
 	given_name VARCHAR(20),
 	family_name VARCHAR(20),
 	title VARCHAR (20),
-	From VARCHAR(3) FOREIGN KEY REFERENCES Country(code)
+	from_place VARCHAR(3) FOREIGN KEY REFERENCES Country(code),
+  -- CONSTRAINT is_numeric CHECK id SIMILAR TO '^[0-9]*$'
 );
 
 CREATE TABLE Country (
@@ -105,6 +106,11 @@ CREATE TABLE Team (
 );
 
 CREATE TABLE Membership (
-	a_id VARCHAR(10) REFERENCES Athlete(id),
+	a_id VARCHAR(10) REFERENCES Athlete(id), --has to be
 	team VARCHAR(20) REFERENCES Team(name)
+);
+
+CREATE TABLE Participates (
+  medal VARCHAR(20),
+  CONSTRAINT valid_medal CHECK medal IN ('gold', 'silver', 'bronze')
 );
