@@ -61,6 +61,7 @@ CREATE TABLE Sport_Venue (
   name VARCHAR(20) PRIMARY KEY REFERENCES Place(name)
 );
 
+--DONT WANT TO ALLOW DIRECT INSERTION/DELETION
 CREATE TABLE Sport (
   name VARCHAR(20) PRIMARY KEY
 );
@@ -71,7 +72,7 @@ CREATE TABLE Accomodation (
 
 CREATE TABLE Vehicle (
   code CHAR(8) PRIMARY KEY,
-  capacity INTEGER --TODO: remember to check that a vehicle hasn't reached its capacity
+  capacity INTEGER
 );
 
 CREATE TABLE Journey (
@@ -115,7 +116,7 @@ CREATE TABLE JourneyBooking (
 
 CREATE TABLE Event (
   name VARCHAR(20) PRIMARY KEY,
-  type VARCHAR(20),
+  type VARCHAR(20) NOT NULL,
   for VARCHAR(20) REFERENCES Sport(name),
   result_type VARCHAR(20), --TODO: not sure what this is for
   held_at VARCHAR(20) REFERENCES Sport_Venue(name),
@@ -124,6 +125,8 @@ CREATE TABLE Event (
 
   CONSTRAINT valid_type CHECK type IN ('Team', 'Individual')
 );
+-- I won't make separate tables for this because its such an effort and i've supported
+-- it out another way
 
 CREATE TABLE Team (
   id CHAR(10) PRIMARY KEY
@@ -149,8 +152,29 @@ CREATE TABLE Participates (
   competitor CHAR(10) REFERENCES Competitor(id), -- not sure about this
   result VARCHAR(20), --TODO: check what this would have in it?
   medal VARCHAR(20),
-  event REFERENCES Event(id), --check if competitor id is individual, then event should be individual etc
+  event REFERENCES Event(name), --check if competitor id is individual, then event should be individual etc
 
   CONSTRAINT valid_medal CHECK medal IN ('gold', 'silver', 'bronze'),
   PRIMARY KEY (competitor, event)
 );
+
+CREATE OR REPLACE FUNCTION correct_event_type() RETURNS trigger AS
+$$ DECLARE
+   event_type       VARCHAR(20);
+   team_competitor  BOOLEAN;
+
+   BEGIN
+    event_type = (SELECT type FROM Event WHERE name = NEW.event);
+    --this will be a string: either 'Team' or 'Individual'
+    team_competitor = (EXISTS (SELECT * FROM Team WHERE id = NEW.competitor));
+
+    IF ((NOT(team_competitor) AND event_type LIKE 'Team')
+        OR (team_competitor AND event_type LIKE 'Individual')) THEN
+        RAISE EXCEPTION 'The competitor type and event type do not match';
+    END IF;
+    RETURN NEW;
+   END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER correct_event_type BEFORE INSERT OR UPDATE ON Participates
+FOR EACH ROW EXECUTE PROCEDURE correct_event_type();

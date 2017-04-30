@@ -18,11 +18,6 @@ that all results are maintained in a common table. This should be supported by a
 assertion and equivalent trigger to enforce the constraint that only team-based results should be
 recorded for team events, and individual athletes’ results for individual events.
 
-Rachel: From this, I gather that two participates relationships are possible.
-There is a separate results table where all results are kept no matter
-whether it is an individual or group result. Maybe it can have an attribute 'group' or
-'individual'.
-
 Tips:
 * It is recommended that you give meaningful names to all your constraints using the
 CONSTRAINT clause.

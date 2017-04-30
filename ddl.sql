@@ -114,3 +114,22 @@ CREATE TABLE Participates (
   medal VARCHAR(20),
   CONSTRAINT valid_medal CHECK medal IN ('gold', 'silver', 'bronze')
 );
+
+-- the view for Athlete_Statistics
+CREATE VIEW Athlete_Statistics AS
+  SELECT id,
+         first_name,
+         last_name,
+         origin,
+         (SELECT COUNT(medal)
+         FROM Participates P
+         WHERE medal LIKE 'gold' AND id = P.id) AS no_gold,
+         (SELECT COUNT(medal)
+         FROM Participates P
+         WHERE medal LIKE 'silver' AND id = P.id) AS no_silver,
+         (SELECT COUNT(medal)
+         FROM Participates P
+         WHERE medal LIKE 'bronze' AND id = P.id) AS no_bronze,
+ FROM (Member M NATURAL JOIN Athlete A);
+
+ --I think if i do the natural join it will get rid of any team people anyway!

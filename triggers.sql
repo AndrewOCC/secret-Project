@@ -68,7 +68,6 @@ FOR EACH ROW EXECUTE PROCEDURE valid_located_entry();
 
 --this function makes it so that nbooked is automatically incremented
 --when you add someone to the journey
--- i don't know if we need this, but it makes sense to me!
 CREATE OR REPLACE FUNCTION inc_nbooked() RETURNS trigger AS
 $$ BEGIN
     UPDATE Journey
