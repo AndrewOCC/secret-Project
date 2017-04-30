@@ -12,29 +12,6 @@ CREATE TABLE Member (
   CONSTRAINT valid_type CHECK (type IN ('Staff', 'Athlete', 'Official'))
 );
 
---this function automatically inserts a member id into the appropriate table
---(staff, athlete, official) depending on the type given.
--- i also want to disallow any real person from inserting into these tables
--- by themself.
-CREATE OR REPLACE FUNCTION classify_member() RETURNS trigger AS
-$$ BEGIN
-  -- check which type, insert into the appropriate table
-    IF (NEW.type LIKE 'Staff') THEN
-      INSERT INTO Staff VALUES (NEW.id);
-    ELSIF (NEW.type LIKE 'Athlete') THEN
-      INSERT INTO Athlete VALUES (NEW.id);
-    ELSIF (NEW.type LIKE 'Official') THEN
-      INSERT INTO Official (NEW.id);
-    END IF;
-    RETURN NULL;
-  END;
-$$ LANGUAGE plpgsql;
-
---creating the trigger that does the function
-CREATE TRIGGER classify_member
-AFTER INSERT ON Member
-FOR EACH ROW EXECUTE PROCEDURE classify_member();
-
 CREATE TABLE Country (
 	code CHAR(2) PRIMARY KEY, -- guessing this is like the shortcode on grok
 	name VARCHAR(20)
@@ -55,31 +32,47 @@ id CHAR(10) PRIMARY KEY FOREIGN KEY REFERENCES Member(id)
 );
 --end: tables for athlete, official, staff
 
+CREATE TABLE Location (
+  name VARCHAR(20) PRIMARY KEY, --like "Glebe"
+  type VARCHAR(20), -- like Suburb, Area, ..
+  CONSTRAINT valid_type CHECK type IN ('Suburb', 'Area', 'District')
+);
+
+CREATE TABLE Located_in (
+  location REFERENCES Location(name),
+  is_in REFERENCES Location(name),
+
+  PRIMARY KEY (location, is_in)
+);
+
+CREATE OR REPLACE FUNCTION valid_located_in_entry() RETURNS trigger AS
+$$ DECLARE
+   parent_type  VARCHAR(20);
+   child_type   VARCHAR(20);
+
+  BEGIN
+   parent_type = (SELECT type FROM Location WHERE name LIKE NEW.is_in);
+   child_type = (SELECT type FROM Location WHERE name LIKE NEW.location);
+
+   IF (NOT((child_type LIKE 'Suburb' AND parent_type LIKE 'Area') OR
+   (child_type LIKE 'Area' AND parent_type LIKE 'District'))) THEN
+    RAISE EXCEPTION '% and % is not a valid located_in pairing', NEW.location, NEW.is_in;
+   END IF;
+   RETURN NEW;
+  END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE Place (
   name VARCHAR(20) PRIMARY KEY,
   longitude DECIMAL(9,6),
   latitude DECIMAL(9,6),
   address VARCHAR(20),
   type VARCHAR(20),
+  location NOT NULL REFERENCES Location(name),
 
   CONSTRAINT valid_type CHECK type IN ('Sport Venue', 'Accommodation'),
   UNIQUE(longitude, latitude) --check: what happens for unique(null)?
 );
-
-CREATE OR REPLACE FUNCTION classify_place() RETURNS trigger AS
-$$ BEGIN
-    IF (NEW.type LIKE 'Sport Venue') THEN
-      INSERT INTO Sport_Venue VALUES (NEW.name)
-    ELSEIF (NEW.type LIKE 'Accomodation') THEN
-      INSERT INTO Accomodation VALUES (NEW.name)
-    END IF;
-    RETURN NULL;
-  END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER classify_place
-AFTER INSERT ON Place
-FOR EACH ROW EXECUTE PROCEDURE classify_place();
 
 CREATE TABLE Sport_Venue (
   name VARCHAR(20) PRIMARY KEY FOREIGN KEY REFERENCES Place(name)
