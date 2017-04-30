@@ -1,6 +1,6 @@
 /*
 Things to take note of:
-  * All Member IDs are created as 10-digit numeric codes;
+  * All Member IDs are created as 10-digit numeric codes; DONE
   * All Vehicle codes are created as 8-digit alphanumeric codes;
   * The medal attribute on the participates relationship can be ‘gold’, ‘silver’ or ‘bronze’, or left
     as NULL if no medal was received.
