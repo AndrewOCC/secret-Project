@@ -24,11 +24,11 @@ CREATE TABLE Athlete (
 );
 
 CREATE TABLE Official (
-id CHAR(10) PRIMARY KEY FOREIGN KEY REFERENCES Member(id)
+id CHAR(10) PRIMARY KEY REFERENCES Member(id)
 );
 
 CREATE TABLE Staff (
-id CHAR(10) PRIMARY KEY FOREIGN KEY REFERENCES Member(id)
+id CHAR(10) PRIMARY KEY REFERENCES Member(id)
 );
 --end: tables for athlete, official, staff
 
@@ -58,9 +58,38 @@ CREATE TABLE Place (
 );
 
 CREATE TABLE Sport_Venue (
-  name VARCHAR(20) PRIMARY KEY FOREIGN KEY REFERENCES Place(name)
+  name VARCHAR(20) PRIMARY KEY REFERENCES Place(name)
 );
 
 CREATE TABLE Accomodation (
-  name VARCHAR(20) PRIMARY KEY FOREIGN KEY REFERENCES Place(name)
+  name VARCHAR(20) PRIMARY KEY REFERENCES Place(name)
+);
+
+CREATE TABLE Vehicle (
+  code CHAR(8) PRIMARY KEY,
+  capacity INTEGER --TODO: remember to check that a vehicle hasn't reached its capacity
+);
+
+CREATE TABLE Journey (
+  start_date DATE,
+	start_time TIME,
+	nbooked INTEGER,
+  dest VARCHAR(20) REFERENCES Place(name),
+  origin VARCHAR(20) REFERENCES Place(name),
+  assigned CHAR(8) REFERENCES Vehicle(code) NOT NULL,
+
+  PRIMARY KEY (start_date, start_time, assigned),
+  CONSTRAINT valid_trip CHECK (dest NOT LIKE origin)
+);
+
+CREATE TABLE JourneyBooking (
+  person_id CHAR(10) REFERENCES Member(id),
+  organizer_id VARCHAR(10) REFERENCES Staff(id),
+  start_time TIME,
+  start_date DATE,
+  vehicle_code CHAR(8),
+
+  FOREIGN KEY (start_date, start_time, vehicle_code)
+  REFERENCES Journey (start_date, start_time, assigned)
+  --that exact combination needs to already exist isnt it
 );

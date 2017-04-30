@@ -55,3 +55,11 @@ $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER valid_located_entry BEFORE INSERT OR UPDATE ON located_in
 FOR EACH ROW EXECUTE PROCEDURE valid_located_entry();
+
+--assertion for checking nbooked
+-- CREATE ASSERTION valid_nbooked
+-- CHECK (NEW.nbooked =
+--   (SELECT COUNT(*)
+--    FROM JourneyBooking
+--    WHERE start_time = NEW.start_time
+--    AND start_date = NEW.start_date))
