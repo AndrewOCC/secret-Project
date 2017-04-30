@@ -45,23 +45,6 @@ CREATE TABLE Located_in (
   PRIMARY KEY (location, is_in)
 );
 
-CREATE OR REPLACE FUNCTION valid_located_in_entry() RETURNS trigger AS
-$$ DECLARE
-   parent_type  VARCHAR(20);
-   child_type   VARCHAR(20);
-
-  BEGIN
-   parent_type = (SELECT type FROM Location WHERE name LIKE NEW.is_in);
-   child_type = (SELECT type FROM Location WHERE name LIKE NEW.location);
-
-   IF (NOT((child_type LIKE 'Suburb' AND parent_type LIKE 'Area') OR
-   (child_type LIKE 'Area' AND parent_type LIKE 'District'))) THEN
-    RAISE EXCEPTION '% and % is not a valid located_in pairing', NEW.location, NEW.is_in;
-   END IF;
-   RETURN NEW;
-  END;
-$$ LANGUAGE plpgsql;
-
 CREATE TABLE Place (
   name VARCHAR(20) PRIMARY KEY,
   longitude DECIMAL(9,6),
