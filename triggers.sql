@@ -24,9 +24,9 @@ FOR EACH ROW EXECUTE PROCEDURE classify_member();
 CREATE OR REPLACE FUNCTION classify_place() RETURNS trigger AS
 $$ BEGIN
     IF (NEW.type LIKE 'Sport Venue') THEN
-      INSERT INTO Sport_Venue VALUES (NEW.name)
-    ELSEIF (NEW.type LIKE 'Accomodation') THEN
-      INSERT INTO Accomodation VALUES (NEW.name)
+      INSERT INTO Sport_Venue VALUES (NEW.name);
+    ELSIF (NEW.type LIKE 'Accomodation') THEN
+      INSERT INTO Accomodation VALUES (NEW.name);
     END IF;
     RETURN NULL;
   END;
@@ -62,4 +62,57 @@ FOR EACH ROW EXECUTE PROCEDURE valid_located_entry();
 --   (SELECT COUNT(*)
 --    FROM JourneyBooking
 --    WHERE start_time = NEW.start_time
---    AND start_date = NEW.start_date))
+--    AND start_date = NEW.start_date
+--   AND vehicle_code = NEW.assigned))
+
+
+--this function makes it so that nbooked is automatically incremented
+--when you add someone to the journey
+-- i don't know if we need this, but it makes sense to me!
+CREATE OR REPLACE FUNCTION inc_nbooked() RETURNS trigger AS
+$$ BEGIN
+    UPDATE Journey
+    SET nbooked = nbooked + 1
+    WHERE (start_date = NEW.start_date
+           AND start_time = NEW.start_time
+           AND assigned = NEW.vehicle_code);
+  END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER inc_nbooked AFTER INSERT ON JourneyBooking
+FOR EACH ROW EXECUTE PROCEDURE inc_nbooked();
+
+
+CREATE OR REPLACE FUNCTION check_capacity() RETURNS trigger AS
+$$ BEGIN
+   capacity := (SELECT capacity FROM Vehicle WHERE code = NEW.vehicle_code);
+
+   current_count := (SELECT COUNT(*) FROM JourneyBooking
+                      WHERE start_time = NEW.start_time
+                      AND start_date = NEW.start_date
+                      AND vehicle_code = NEW.vehicle_code);
+
+    IF (current_count >= capacity) THEN
+      RAISE EXCEPTION 'Vehicle with code % is full', NEW.vehicle_code;
+    END IF;
+    RETURN NEW;
+  END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER check_capacity BEFORE INSERT OR UPDATE ON JourneyBooking
+FOR EACH ROW EXECUTE PROCEDURE check_capacity();
+
+CREATE OR REPLACE FUNCTION insert_as_competitor() RETURNS trigger AS
+$$ BEGIN
+    INSERT INTO Competitor VALUES (NEW.id);
+    RETURN NULL;
+   END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER insert_athlete_as_competitor
+AFTER INSERT ON Athlete
+FOR EACH ROW EXECUTE PROCEDURE insert_as_competitor();
+
+CREATE TRIGGER insert_team_as_competitor
+AFTER INSERT ON Team
+FOR EACH ROW EXECUTE PROCEDURE insert_as_competitor();

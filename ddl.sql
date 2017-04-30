@@ -19,7 +19,7 @@ l_name REFERENCES Location(name)
 CREATE TABLE Journey (
 	start_date DATE,
 	start_time TIME,
-	nBooked INT,
+	nBooked INT DEFAULT 0,
 	to VARCHAR(20) REFERENCES Place(name),
 	from VARCHAR(20) REFERENCES Place(name),
 	assigned VARCHAR(8) REFERENCES Vehicle(code) NOT NULL

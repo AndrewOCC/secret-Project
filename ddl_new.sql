@@ -61,6 +61,10 @@ CREATE TABLE Sport_Venue (
   name VARCHAR(20) PRIMARY KEY REFERENCES Place(name)
 );
 
+CREATE TABLE Sport (
+  name VARCHAR(20) PRIMARY KEY
+);
+
 CREATE TABLE Accomodation (
   name VARCHAR(20) PRIMARY KEY REFERENCES Place(name)
 );
@@ -88,8 +92,65 @@ CREATE TABLE JourneyBooking (
   start_time TIME,
   start_date DATE,
   vehicle_code CHAR(8),
-
+  --i deleted 'when' attribute because i didn't know its purpose,
+  --we already have start_time and start_date
   FOREIGN KEY (start_date, start_time, vehicle_code)
   REFERENCES Journey (start_date, start_time, assigned)
-  --that exact combination needs to already exist isnt it
+  --that exact combination needs to already exist, isn't it!
+);
+
+-- SELECT id, COUNT(*)
+-- GROUP BY id
+-- -- a view to present all details of an athlete (including those inherited from Member), plus
+-- -- columns reporting the number of gold, silver and bronze medals received by that athlete.
+-- -- a think it needs to contain all like athletes statistics and you just select athlete id
+-- SELECT id, title || first_name || last_name AS name, name AS origin, COUNT(*)
+--
+-- FROM Athlete NATURAL JOIN Member NATURAL JOIN Individual_Participates
+-- INNER JOIN Country ON (code = origin)--all will join on id
+-- -- You also need to join to get the bronze medals and stuff let's pretend we already have it
+--
+-- CREATE VIEW Athlete_Statistics AS
+-- SELECT
+
+CREATE TABLE Event (
+  name VARCHAR(20) PRIMARY KEY,
+  type VARCHAR(20),
+  for VARCHAR(20) REFERENCES Sport(name),
+  result_type VARCHAR(20), --TODO: not sure what this is for
+  held_at VARCHAR(20) REFERENCES Sport_Venue(name),
+  start_time TIME, --can we not just combine the two fields?
+  start_date DATE,
+
+  CONSTRAINT valid_type CHECK type IN ('Team', 'Individual')
+);
+
+CREATE TABLE Team (
+  id CHAR(10) PRIMARY KEY
+	country_code CHAR(2) REFERENCES Country(code),
+	name VARCHAR(20),
+
+	UNIQUE NOT NULL (country_code, name)
+);
+
+CREATE TABLE Membership (
+  team REFERENCES Team(id),
+  member REFERENCES Athlete(id),
+
+  PRIMARY KEY (team, member)
+);
+
+--NO ONE should be allowed to insert into this
+CREATE TABLE Competitor (
+  id CHAR(10)
+);
+
+CREATE TABLE Participates (
+  competitor CHAR(10) REFERENCES Competitor(id), -- not sure about this
+  result VARCHAR(20), --TODO: check what this would have in it?
+  medal VARCHAR(20),
+  event REFERENCES Event(id), --check if competitor id is individual, then event should be individual etc
+
+  CONSTRAINT valid_medal CHECK medal IN ('gold', 'silver', 'bronze'),
+  PRIMARY KEY (competitor, event)
 );
