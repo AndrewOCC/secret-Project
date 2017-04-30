@@ -115,3 +115,25 @@ FOR EACH ROW EXECUTE PROCEDURE insert_as_competitor();
 CREATE TRIGGER insert_team_as_competitor
 AFTER INSERT ON Team
 FOR EACH ROW EXECUTE PROCEDURE insert_as_competitor();
+
+
+CREATE OR REPLACE FUNCTION correct_event_type() RETURNS trigger AS
+$$ DECLARE
+   event_type       VARCHAR(20);
+   team_competitor  BOOLEAN;
+
+   BEGIN
+    event_type = (SELECT type FROM Event WHERE name = NEW.event);
+    --this will be a string: either 'Team' or 'Individual'
+    team_competitor = (EXISTS (SELECT * FROM Team WHERE id = NEW.competitor));
+
+    IF ((NOT(team_competitor) AND event_type LIKE 'Team')
+        OR (team_competitor AND event_type LIKE 'Individual')) THEN
+        RAISE EXCEPTION 'The competitor type and event type do not match';
+    END IF;
+    RETURN NEW;
+   END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER correct_event_type BEFORE INSERT OR UPDATE ON Participates
+FOR EACH ROW EXECUTE PROCEDURE correct_event_type();
